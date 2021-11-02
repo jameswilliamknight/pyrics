@@ -4,7 +4,6 @@ import argparse
 from util.logger import Logger
 import lyricsgenius as lg
 import os
-from markdown import markdown
 
 parser = argparse.ArgumentParser(
     usage="%(prog)s [OPTIONAL FLAGS] phrase",
@@ -47,7 +46,7 @@ album_name_slug = album_name.replace(",","").replace(" ", "_")
 
 filename_base = f"{artist}_{album_name_slug}"
 
-lyrics_file = os.path.join(lyrics_dir, f"{filename_base}.md")
+lyrics_file = os.path.join(lyrics_dir, f"{filename_base}.temp.html")
 lyrics_printout = os.path.join(lyrics_dir, f"{filename_base}.html")
 # for f in open(lyrics_file, "w"):
 #     pass
@@ -67,14 +66,17 @@ else:
 
 
 with open(lyrics_file, 'w') as f:
-    f.write(f"# {artist}\n\n## {album_name}\n\n---\n\n")
+    f.write(f"<h1>{artist}</h1>\n<h2>{album_name}</h2>\n<hr/>\n")
     for track in album.tracks:
         lyrics = track.song.lyrics.replace("EmbedShare", "").replace("URLCopyEmbedCopy", "").strip()
+        lyrics_split = lyrics.split('\n\n')
+        lyrics_paragraphed = ["<p>" + s + "</p>" for s in lyrics_split]
+        lyrics = "\n".join(lyrics_paragraphed)
         if len(lyrics) < 1:
             continue
         track_no = str(track.number).zfill(2)
         title = track.song.title
-        f.write(f"### {track_no}. {title}\n\n{lyrics}\n\n---\n\n")
+        f.write(f"<div class=\"song\">\n<h3> {track_no}. {title}</h3>\n<span>{lyrics}</span>\n</div>\n<hr/>\n\n")
 
 
 # TODO: take markdown file, and convert to HTML
@@ -87,8 +89,7 @@ with open(html_template_path, 'r') as f:
 
 with open(lyrics_file, 'r') as f:
     lyrics = f.read()
-    html += "\n\n"
-    html += markdown(lyrics)
+    html = html.replace("<content />", lyrics)
 
 with open(lyrics_printout, 'w') as f:
     f.write(html)
